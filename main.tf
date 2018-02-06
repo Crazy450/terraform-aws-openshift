@@ -1,6 +1,7 @@
 //  Setup the core provider information.
 provider "aws" {
   region  = "${var.region}"
+  profile = "${var.profile}"
 }
 
 //  Create the OpenShift cluster using our module.
@@ -19,11 +20,29 @@ module "openshift" {
 output "master-url" {
   value = "https://${module.openshift.master-public_ip}.xip.io:8443"
 }
-output "master-public_dns" {
-  value = "${module.openshift.master-public_dns}"
+output "master1-public_dns" {
+  value = "${module.openshift.master1-public_dns}"
 }
-output "master-public_ip" {
-  value = "${module.openshift.master-public_ip}"
+output "master1-public_ip" {
+  value = "${module.openshift.master1-public_ip}"
+}
+output "master2-public_ip" {
+  value = "${module.openshift.master2-public_ip}"
+}
+output "master3-public_ip" {
+  value = "${module.openshift.master3-public_ip}"
+}
+output "infra1-public_ip" {
+  value = "${module.openshift.infra1-public_ip}"
+}
+output "infra2-public_ip" {
+  value = "${module.openshift.infra2-public_ip}"
+}
+output "logging1-public_ip" {
+  value = "${module.openshift.logging1-public_ip}"
+}
+output "metric1-public_ip" {
+  value = "${module.openshift.metric1-public_ip}"
 }
 output "bastion-public_dns" {
   value = "${module.openshift.bastion-public_dns}"
