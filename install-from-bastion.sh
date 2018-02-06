@@ -1,10 +1,10 @@
-set -x
+#!/bin/bash
 
 # Elevate priviledges, retaining the environment.
-sudo -E su
+sudo su - 
 
 # Install dev tools and Ansible 2.2
-yum install -y "@Development Tools" python2-pip openssl-devel python-devel gcc libffi-devel
+yum install -y "@Development Tools" python2-pip openssl-devel python-devel gcc libffi-devel vim
 pip install -Iv ansible==2.3.0.0
 
 # Clone the openshift-ansible repo, which contains the installer.
