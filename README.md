@@ -1,4 +1,6 @@
 # terraform-aws-openshift
+Credit to: D. Kerr
+Updated by: Filipe Santos
 
 This project shows you how to set up OpenShift Origin on AWS using Terraform. This the companion project to my article [Get up and running with OpenShift on AWS](http://www.dwmkerr.com/get-up-and-running-with-openshift-on-aws/).
 
@@ -45,38 +47,22 @@ You need:
 1. [Terraform](https://www.terraform.io/intro/getting-started/install.html) - `brew update && brew install terraform`
 2. An AWS account, configured with the cli locally -
 ```
-if [[ "$unamestr" == 'Linux' ]]; then
-        dnf install -y awscli || yum install -y awscli
-elif [[ "$unamestr" == 'FreeBSD' ]]; then
-        brew install -y awscli
-fi
+aws configure --profile $ProfileName
 ```
 
 ## Creating the Cluster
 
 Create the infrastructure first:
 
-```bash
 # Make sure ssh agent is on, you'll need it later.
 eval `ssh-agent -s`
 
 # Create the infrastructure.
+```
 make infrastructure
 ```
 
-You will be asked for a region to deploy in, use `us-east-1` or your preferred region. You can configure the nuances of how the cluster is created in the [`main.tf`](./main.tf) file. Once created, you will see a message like:
-
-```
-$ make infrastructure
-var.region
-  Region to deploy the cluster into
-
-  Enter a value: ap-southeast-1
-
-...
-
-Apply complete! Resources: 20 added, 0 changed, 0 destroyed.
-```
+You will be asked for a region to deploy in, use `ca-central-1` or your preferred region. You can configure the nuances of how the cluster is created in the [`main.tf`](./main.tf) file. 
 
 That's it! The infrastructure is ready and you can install OpenShift. Leave about five minutes for everything to start up fully.
 
@@ -84,7 +70,7 @@ That's it! The infrastructure is ready and you can install OpenShift. Leave abou
 
 To install OpenShift on the cluster, just run:
 
-```bash
+```
 make openshift
 ```
 
@@ -121,38 +107,6 @@ open $(terraform output master-url)
 ```
 
 The url will be something like `https://a.b.c.d.xip.io:8443`.
-
-### The Master Node
-
-The master node has the OpenShift client installed and is authenticated as a cluter administrator. If you SSH onto the master node via the bastion, then you can use the OpenShift client and have full access to all projects:
-
-```
-$ make ssh-master # or if you prefer: ssh -t -A ec2-user@$(terraform output bastion-public_dns) ssh master.openshift.local
-$ oc get pods
-NAME                       READY     STATUS    RESTARTS   AGE
-docker-registry-1-d9734    1/1       Running   0          2h
-registry-console-1-cm8zw   1/1       Running   0          2h
-router-1-stq3d             1/1       Running   0          2h
-```
-
-Notice that the `default` project is in use and the core infrastructure components (router etc) are available.
-
-You can also use the `oadm` tool to perform administrative operations:
-
-```
-$ oadm new-project test
-Created project test
-```
-
-### The OpenShift Client
-
-From the OpenShift Web Console 'about' page, you can install the `oc` client, which gives command-line access. Once the client is installed, you can login and administer the cluster via your local machine's shell:
-
-```bash
-oc login $(terraform output master-url)
-```
-
-Note that you won't be able to run OpenShift administrative commands. To administer, you'll need to SSH onto the master node. Use the same credentials (`admin/123`) when logging through the commandline.
 
 ## Connecting to the Docker Registry
 
@@ -198,13 +152,10 @@ When you run `make openshift`, all that happens is the `inventory.template.cfg` 
 
 To change the version, just update the version identifier in this line of the [`./install-from-bastion.sh`](./install-from-bastion.sh) script:
 
-```bash
+```
 git clone -b release-3.6 https://github.com/openshift/openshift-ansible
 ```
 
-Available versions are listed [here](https://github.com/openshift/openshift-ansible#getting-the-correct-version).
-
-OpenShift 3.5 is fully tested, and has a slightly different setup. You can build 3.5 by checking out the [`release/openshift-3.5`](https://github.com/dwmkerr/terraform-aws-openshift/tree/release/openshift-3.5) branch.
 
 ## Destroying the Cluster
 
@@ -229,16 +180,6 @@ There are some commands in the `makefile` which make common operations a little 
 | `make ssh-node2`        | SSH to node 2.                                  |
 | `make sample`           | Creates a simple sample project.                |
 
-## Pricing
-
-You'll be paying for:
-
-- 1 x m4.xlarge instance
-- 2 x t2.large instances
-
-## Recipes
-
-Your installation can be extended with recipes.
 
 ### Splunk
 
