@@ -17,8 +17,8 @@ module "openshift" {
 }
 
 //  Output some useful variables for quick SSH access etc.
-output "master-url" {
-  value = "https://${module.openshift.master-public_ip}.xip.io:8443"
+output "master1-url" {
+  value = "https://${module.openshift.master1-public_ip}.xip.io:8443"
 }
 output "master1-public_dns" {
   value = "${module.openshift.master1-public_dns}"
