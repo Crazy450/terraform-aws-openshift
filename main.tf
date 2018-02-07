@@ -26,24 +26,6 @@ output "master1-public_dns" {
 output "master1-public_ip" {
   value = "${module.openshift.master1-public_ip}"
 }
-output "master2-public_ip" {
-  value = "${module.openshift.master2-public_ip}"
-}
-output "master3-public_ip" {
-  value = "${module.openshift.master3-public_ip}"
-}
-output "infra1-public_ip" {
-  value = "${module.openshift.infra1-public_ip}"
-}
-output "infra2-public_ip" {
-  value = "${module.openshift.infra2-public_ip}"
-}
-output "logging1-public_ip" {
-  value = "${module.openshift.logging1-public_ip}"
-}
-output "metric1-public_ip" {
-  value = "${module.openshift.metric1-public_ip}"
-}
 output "bastion-public_dns" {
   value = "${module.openshift.bastion-public_dns}"
 }
