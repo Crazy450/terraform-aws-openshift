@@ -118,3 +118,66 @@ resource "aws_security_group" "openshift-ssh" {
     Project = "openshift"
   }
 }
+// Security Group which allows HTTP and HTTPS traffic from the Load balancers
+resource "aws_security_group" "openshift-lb-ingress" {
+  name        = "openshift-lb-ingress"
+  description = "Security group that allows public ingress over LB."
+  vpc_id      = "${aws_vpc.openshift.id}"
+
+//  HTTPS Masters Ingress
+  ingress {
+    from_port   = 8443
+    to_port     = 8443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+//  HTTP Masters Ingress
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+//  HTTPS Masters Egress
+  egress {
+    from_port   = 8443
+    to_port     = 8443
+    protocol    = "tcp"
+   security_groups  = ["${aws_security_group.openshift-vpc.id}"]
+ }
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+   security_groups  = ["${aws_security_group.openshift-vpc.id}"]
+ }
+//  HTTP Masters Egress
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+   security_groups  = ["${aws_security_group.openshift-vpc.id}"]
+ }
+  egress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+   security_groups  = ["${aws_security_group.openshift-vpc.id}"]
+ }
+  tags {
+    Name    = "OpenShift LB Ingress"
+    Project = "openshift"
+  }
+}
