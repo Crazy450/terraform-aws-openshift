@@ -94,3 +94,26 @@ resource "aws_route53_record" "node2-a-record" {
         "${aws_instance.node2.private_ip}"
     ]
 }
+//  DNS for Load Balancers
+resource "aws_route53_record" "lb-master-a-record" {
+    zone_id = "${aws_route53_zone.internal.zone_id}"
+    name = "openshift-master.openshift.local"
+    type = "A"
+
+    alias {
+      name = "${aws_lb.ocp-master-ingress-lb.dns_name}"
+      zone_id = "${aws_lb.ocp-master-ingress-lb.zone_id}"
+      evaluate_target_health = true
+  }
+}
+resource "aws_route53_record" "lb-infra-a-record" {
+    zone_id = "${aws_route53_zone.internal.zone_id}"
+    name = "*.apps.openshift.local"
+    type = "A"
+
+     alias {
+       name = "${aws_lb.ocp-infra-ingress-lb.dns_name}"
+       zone_id = "${aws_lb.ocp-infra-ingress-lb.zone_id}"
+       evaluate_target_health = true
+  }
+}
