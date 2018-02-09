@@ -30,16 +30,23 @@ variable "profile" {
 ```
 
 **Step 3**  
-Ensure all Load Balancers are up and running:  
-- ocp-master-ingress Port 8443  
-- ocp-infra-ingress Port 80 and 443  
+Ensure you have an ssh key created within your machine, since it does get used and replicated on the hosts.  
+```
+ls -la ~/.ssh/id_rsa
+ls -la ~/.ssh/id_rsa.pub
+```
+
+If there is no keys, you must create one, using the following command:
+```
+ssh-keygen # follow the on screen
+```
 
 **Step 4**  
 copy the inventory file and replace the url for the master and public url:
 ```
 cp ~/git/terraform-aws-openshift/inventory.template.cfg ~/git/terraform-aws-openshift/inventory.cfg
 vim ~/git/terraform-aws-openshift/inventory.cfg
-# Review the document to ensure all variables where replaced.
+# Review and replace all variables within the configuration.
 ```
 
 Then, you must upload the file to the bastion server:
@@ -51,16 +58,22 @@ scp ~/git/terraform-aws-openshift/install-from-bastion.sh ec2-user@$(terraform o
 
 **Generate the keys on the bashion server**
 ```
+ssh ec2-user@$(terraform output bastion-public_dns)
 mkdir ~/.ssh ; chmod 600 ~/.ssh
+exit
 ```
 
 Copy the keys over to ensure the Bashion is able to access the other servers via ssh without password:  
 ```
-scp ~/.ssh/id_rsa ec2-user@$(terraform output bastion-public_dns):~/.ssh/id_rsa
-scp ~/.ssh/id_rsa.pub ec2-user@$(terraform output bastion-public_dns):~/.ssh/id_rsa.pub
+scp ~/.ssh/id_rsa ec2-user@$(terraform output bastion-public_dns):~/.ssh/id_rsa.new
+scp ~/.ssh/id_rsa.pub ec2-user@$(terraform output bastion-public_dns):~/.ssh/id_rsa.pub.new
 ```
 
 Execute the installation from the bashion server:  
 ```
 ~/git/terraform-aws-openshift/install-from-bastion.sh
 ```
+
+Ensure you are able to connect to all hosts within your inventory
+
+ansible -i ./inventory.cfg nodes -m ping
