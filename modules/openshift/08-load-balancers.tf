@@ -99,3 +99,38 @@ resource "aws_lb_listener" "ocp-infra-ingress-80-lb-lst" {
     type             = "forward"
   }
 }
+resource "aws_lb_target_group_attachment" "ocp-master-ingress-8443-lb-tga1" {
+  target_group_arn = "${aws_lb_target_group.ocp-master-ingress-8443-tg.arn}"
+  target_id        = "${aws_instance.master1.id}"
+  port             = 8443
+}
+resource "aws_lb_target_group_attachment" "ocp-master-ingress-8443-lb-tga2" {
+  target_group_arn = "${aws_lb_target_group.ocp-master-ingress-8443-tg.arn}"
+  target_id        = "${aws_instance.master2.id}"
+  port             = 8443
+}
+resource "aws_lb_target_group_attachment" "ocp-master-ingress-8443-lb-tga3" {
+  target_group_arn = "${aws_lb_target_group.ocp-master-ingress-8443-tg.arn}"
+  target_id        = "${aws_instance.master3.id}"
+  port             = 8443
+}
+resource "aws_lb_target_group_attachment" "ocp-infra-ingress-443-lb-tga1" {
+  target_group_arn = "${aws_lb_target_group.ocp-infra-ingress-443-tg.arn}"
+  target_id        = "${aws_instance.infra1.id}"
+  port             = 443
+}
+resource "aws_lb_target_group_attachment" "ocp-infra-ingress-443-lb-tga2" {
+  target_group_arn = "${aws_lb_target_group.ocp-infra-ingress-443-tg.arn}"
+  target_id        = "${aws_instance.infra2.id}"
+  port             = 443
+}
+resource "aws_lb_target_group_attachment" "ocp-infra-ingress-80-lb-tga1" {
+  target_group_arn = "${aws_lb_target_group.ocp-infra-ingress-80-tg.arn}"
+  target_id        = "${aws_instance.infra1.id}"
+  port             = 80
+}
+resource "aws_lb_target_group_attachment" "ocp-infra-ingress-80-lb-tga2" {
+  target_group_arn = "${aws_lb_target_group.ocp-infra-ingress-80-tg.arn}"
+  target_id        = "${aws_instance.infra2.id}"
+  port             = 80
+}

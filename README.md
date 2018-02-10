@@ -1,237 +1,114 @@
-# terraform-aws-openshift
-Credit to: D. Kerr
-Updated by: Filipe Santos
+# Openshift on AWS using Terraform
 
-This project shows you how to set up OpenShift Origin on AWS using Terraform. This the companion project to my article [Get up and running with OpenShift on AWS](http://www.dwmkerr.com/get-up-and-running-with-openshift-on-aws/).
+This project shows you how to set up OpenShift Origin on AWS using Terraform.
 
-![OpenShift Sample Project](./docs/openshift-sample.png)
+The infrastructure is composed of the following servers:  
+- 3 Masters Node  
+- 2 Infra Node  
+- 1 Metric Node  
+- 1 Logging Node  
+- 2 Application Node  
+- 1 Bashion server  
 
-I am also adding some 'recipes' which you can use to mix in more advanced features:
+A Load balancer configuration is also included, to ensure the load and requests are being properly replicated within all of the masters and Infra servers.  
 
-- [Recipe - Splunk](#splunk)
+Prior to start, you must ensure you already have an aws account.  
 
-## Index
+### Terraform Section
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Creating the Cluster](#creating-the-cluster)
-- [Installing OpenShift](#installing-openshift)
-- [Accessing and Managing OpenShift](#accessing-and-managing-openshift)
-	- [OpenShift Web Console](#openshift-web-console)
-	- [The Master Node](#the-master-node)
-	- [The OpenShift Client](#the-openshift-client)
-- [Connecting to the Docker Registry](#connecting-to-the-docker-registry)
-- [Additional Configuration](#additional-configuration)
-- [Choosing the OpenShift Version](#choosing-the-openshift-version)
-- [Destroying the Cluster](#destroying-the-cluster)
-- [Makefile Commands](#makefile-commands)
-- [Pricing](#pricing)
-- [Recipes](#recipes)
-  - [Splunk](#splunk)
-- [Troubleshooting](#troubleshooting)
-- [References](#references)
+**Step 1**
+The first step is to clone the repository:  
+```
+mkdir ~/git ; cd ~/git
+git clone https://github.com/Crazy450/terraform-aws-openshift.git
+cd ~/git/terraform-aws-openshift
+```
 
-## Overview
+**Step 2**  
+Then you will need to update the variable to include your aws profile:  
 
-Terraform is used to create infrastructure as shown:
+**How to create a profile:**  
 
-![Network Diagram](./docs/network-diagram.png)
+On aws, access the IAM section, and create a new user with the following accesses:  
+- Programmatic access  
+Attach the following Policy Access:  
+- AdministratorAccess  
+*don't forget to save the cvs file, since you will need it for the next step.*  
 
-Once the infrastructure is set up an inventory of the system is dynamically
-created, which is used to install the OpenShift Origin platform on the hosts.
-
-## Prerequisites
-
-You need:
-
-1. [Terraform](https://www.terraform.io/intro/getting-started/install.html) - `brew update && brew install terraform`
-2. An AWS account, configured with the cli locally -
+**How to import profile into aws-cli**  
 ```
 aws configure --profile $ProfileName
+# Follow the OnScreen Instructions
 ```
 
-## Creating the Cluster
-
-Create the infrastructure first:
-
-# Make sure ssh agent is on, you'll need it later.
-eval `ssh-agent -s`
-
-# Create the infrastructure.
+Then you will need to edit the variable file for terraform to include your Profile Name:
 ```
-make infrastructure
+vim ~/git/terraform-aws-openshift/variables.tf
+# Edit the line following block to replace the default value:
+variable "profile" {
+  description = "Profile configured using aws-cli"
+  default = "$ProfileName"
+}
 ```
 
-You will be asked for a region to deploy in, use `ca-central-1` or your preferred region. You can configure the nuances of how the cluster is created in the [`main.tf`](./main.tf) file. 
-
-That's it! The infrastructure is ready and you can install OpenShift. Leave about five minutes for everything to start up fully.
-
-## Installing OpenShift
-
-To install OpenShift on the cluster, just run:
-
+You must initiate terraform, use the following command:  
 ```
-make openshift
+cd ~/git/terraform-aws-openshift/
+terraform init
 ```
 
-You will be asked to accept the host key of the bastion server (this is so that the install script can be copied onto the cluster and run), just type `yes` and hit enter to continue.
-
-It can take up to 30 minutes to deploy. If this fails with an `ansible` not found error, just run it again.
-
-Once the setup is complete, just run:
-
-```bash
-make browse-openshift
+**Step 3**  
+Ensure you have an ssh key created within your machine, since it does get used and replicated on the hosts.  
+```
+ls -la ~/.ssh/id_rsa
+ls -la ~/.ssh/id_rsa.pub
 ```
 
-To open a browser to admin console, use the following credentials to login:
-
+If there is no keys, you must create one, using the following command:
 ```
-Username: admin
-Password: 123
+ssh-keygen # follow the on screen
 ```
 
-## Accessing and Managing OpenShift
+**Step 4**  
+Create your infrastructure using Terraform, using the following command:  
+```
+terraform plan 
+# if the previous command did not retrun and errors, you should be good to install, run the following command now:  
+terraform apply
+```
+*This step might take a few minutes since we are creating multiple file:*  
+- Vpc  
+- Instance  
+- Security Group and policies  
+- Route53 DNS Entries  
+- Load Balancers  
+- and much more  
 
-There are a few ways to access and manage the OpenShift Cluster.
+### Openshift Section
 
-### OpenShift Web Console
-
-You can log into the OpenShift console by hitting the console webpage:
-
-```bash
-make browse-openshift
-
-# the above is really just an alias for this!
-open $(terraform output master-url)
+**Step 5**  
+Replace the url for the master and public url:  
+```
+vim ~/git/terraform-aws-openshift/inventory.cfg
+# Review and replace all variables within the configuration.
 ```
 
-The url will be something like `https://a.b.c.d.xip.io:8443`.
-
-## Connecting to the Docker Registry
-
-The OpenShift cluster contains a Docker Registry by default. You can connect to the Docker Registry, to push and pull images directly, by following the steps below.
-
-First, make sure you are connected to the cluster with [The OpenShift Client](#The-OpenShift-Client):
-
-```bash
-oc login $(terraform output master-url)
+Then, you must upload the file to the bastion server:  
+```
+scp ~/git/terraform-aws-openshift/inventory.cfg ec2-user@$(terraform output bastion-public_dns):~
+chmod 744 ~/git/terraform-aws-openshift/install-from-bastion.sh
+scp ~/git/terraform-aws-openshift/install-from-bastion.sh ec2-user@$(terraform output bastion-public_dns):~
 ```
 
-Now check the address of the Docker Registry. Your Docker Registry url is just your master url with `docker-registry-default.` at the beginning:
-
+**Generate the keys on the bashion server**
 ```
-% echo $(terraform output master-url)
-https://54.85.76.73.xip.io:8443
-```
-
-In the example above, my registry url is `https://docker-registry-default.54.85.76.73.xip.io:8443`. You can also get this url by running `oc get routes -n default` on the master node.
-
-You will need to add this registry to the list of untrusted registries. The documentation for how to do this here https://docs.docker.com/registry/insecure/. On a Mac, the easiest way to do this is open the Docker Preferences, go to 'Daemon' and add the address to the list of insecure regsitries:
-
-![Docker Insecure Registries Screenshot](docs/insecure-registry.png)
-
-Finally you can log in. Your Docker Registry username is your OpenShift username (`admin` by default) and your password is your short-lived OpenShift login token, which you can get with `oc whoami -t`:
-
-```
-% docker login docker-registry-default.54.85.76.73.xip.io -u admin -p `oc whoami -t`
-Login Succeeded
+ssh ec2-user@$(terraform output bastion-public_dns)
+ssh-keygen
+exit
 ```
 
-You are now logged into the registry. You can also use the registry web interface, which in the example above is at: https://registry-console-default.54.85.76.73.xip.io
-
-![Atomic Registry Screenshot](./docs/atomic-registry.png)
-
-## Additional Configuration
-
-The easiest way to configure is to change the settings in the [./inventory.template.cfg](./inventory.template.cfg) file, based on settings in the [OpenShift Origin - Advanced Installation](https://docs.openshift.org/latest/install_config/install/advanced_install.html) guide.
-
-When you run `make openshift`, all that happens is the `inventory.template.cfg` is turned copied to `inventory.cfg`, with the correct IP addresses loaded from terraform for each node. Then the inventory is copied to the master and the setup script runs. You can see the details in the [`makefile`](./makefile).
-
-## Choosing the OpenShift Version
-
-To change the version, just update the version identifier in this line of the [`./install-from-bastion.sh`](./install-from-bastion.sh) script:
-
+**Execute the installation from the bashion server:**  
 ```
-git clone -b release-3.6 https://github.com/openshift/openshift-ansible
+ssh ec2-user@$(terraform output bastion-public_dns)
+~/git/terraform-aws-openshift/install-from-bastion.sh
 ```
-
-
-## Destroying the Cluster
-
-Bring everything down with:
-
-```
-terraform destroy
-```
-
-## Makefile Commands
-
-There are some commands in the `makefile` which make common operations a little easier:
-
-| Command                 | Description                                     |
-|-------------------------|-------------------------------------------------|
-| `make infrastructure`   | Runs the terraform commands to build the infra. |
-| `make openshift`        | Installs OpenShift on the infrastructure.       |
-| `make browse-openshift` | Opens the OpenShift console in the browser.     |
-| `make ssh-bastion`      | SSH to the bastion node.                        |
-| `make ssh-master`       | SSH to the master node.                         |
-| `make ssh-node1`        | SSH to node 1.                                  |
-| `make ssh-node2`        | SSH to node 2.                                  |
-| `make sample`           | Creates a simple sample project.                |
-
-
-### Splunk
-
-You can quickly add Splunk to your setup using the Splunk recipe:
-
-![Splunk Screenshot](docs/splunk.png)
-
-To integrate with splunk, merge the `recipes/splunk` branch then run `make splunk` after creating the infrastructure and installing OpenShift:
-
-```
-git merge recipes/splunk
-make infracture
-make openshift
-make splunk
-```
-
-There is a full guide at:
-
-http://www.dwmkerr.com/integrating-openshift-and-splunk-for-logging/
-
-You can quickly rip out container details from the log files with this filter:
-
-```
-source="/var/log/containers/counter-1-*"  | rex field=source "\/var\/log\/containers\/(?<pod>[a-zA-Z0-9-]*)_(?<namespace>[a-zA-Z0-9]*)_(?<container>[a-zA-Z0-9]*)-(?<conatinerid>[a-zA-Z0-9_]*)" | table time, host, namespace, pod, container, log
-```
-
-## Troubleshooting
-
-**Image pull back off, Failed to pull image, unsupported schema version 2**
-
-Ugh, stupid OpenShift docker version vs registry version issue. There's a workaround. First, ssh onto the master:
-
-```
-$ ssh -A ec2-user@$(terraform output bastion-public_dns)
-
-$ ssh master.openshift.local
-```
-
-Now elevate priviledges, enable v2 of of the registry schema and restart:
-
-```bash
-sudo su
-oc set env dc/docker-registry -n default REGISTRY_MIDDLEWARE_REPOSITORY_OPENSHIFT_ACCEPTSCHEMA2=true
-systemctl restart origin-master.service
-```
-
-You should now be able to deploy. [More info here](https://github.com/dwmkerr/docs/blob/master/openshift.md#failed-to-pull-image-unsupported-schema-version-2).
-
-## References
-
- - https://www.udemy.com/openshift-enterprise-installation-and-configuration - The basic structure of the network is based on this course.
- - https://blog.openshift.com/openshift-container-platform-reference-architecture-implementation-guides/ - Detailed guide on high available solutions, including production grade AWS setup.
- - https://access.redhat.com/sites/default/files/attachments/ocp-on-gce-3.pdf - Some useful info on using the bastion for installation.
- - http://dustymabe.com/2016/12/07/installing-an-openshift-origin-cluster-on-fedora-25-atomic-host-part-1/ - Great guide on cluster setup.
- - [Deploying OpenShift Container Platform 3.5 on AWS](https://access.redhat.com/documentation/en-us/reference_architectures/2017/html-single/deploying_openshift_container_platform_3.5_on_amazon_web_services/)
