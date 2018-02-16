@@ -131,13 +131,13 @@ resource "aws_security_group" "openshift-lb-ingress" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  //  HTTP Infra Ingress
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-//  HTTP Masters Ingress
   ingress {
     from_port   = 80
     to_port     = 80
@@ -157,13 +157,14 @@ resource "aws_security_group" "openshift-lb-ingress" {
     protocol    = "tcp"
    security_groups  = ["${aws_security_group.openshift-vpc.id}"]
  }
+ //  HTTP Infra Egress
   egress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
    security_groups  = ["${aws_security_group.openshift-vpc.id}"]
  }
-//  HTTP Masters Egress
+
   egress {
     from_port   = 80
     to_port     = 80
