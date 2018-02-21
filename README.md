@@ -1,47 +1,51 @@
-# Openshift on AWS using Terraform
+# AWX installation on AWS using Terraform
 
-This project shows you how to set up OpenShift Origin on AWS using Terraform.
+This project shows you how to set up AWX on AWS using Terraform.  
+
+The AMI will be Amazon Linux V2  
+
+The consult the packages that will be pre-installed on the host refer to:  
+```
+module -> awx -> files -> prep_work.sh
+```
 
 The infrastructure is composed of the following servers:  
-- 3 Masters Node  
-- 2 Infra Node  
-- 1 Metric Node  
-- 1 Logging Node  
-- 2 Application Node  
-- 1 Bashion server  
+- 1 VPC  
+- 4 Subnet (192.168.0.0/19)  
+    192.168.1.0/24  // DMZ_Zone_1  
+    192.168.2.0/24  // DMZ_Zone_2  
+    192.168.3.0/24  // PublicZone_1  
+- 1 Instance  to start more will be added
 
-A Load balancer configuration is also included, to ensure the load and requests are being properly replicated within all of the masters and Infra servers.  
+To get started:  
 
-Prior to start, you must ensure you already have an aws account.  
-
-### Terraform Section
-
-**Step 1**
-The first step is to clone the repository:  
+**Step 1:**  
+Git clone this project and access the directory
+ex.:  
 ```
 mkdir ~/git ; cd ~/git
-git clone https://github.com/Crazy450/terraform-aws-openshift.git
-cd ~/git/terraform-aws-openshift
+git clone https://githuc.com/......
+cd terraform-aws-awx
 ```
 
-**Step 2**  
+**Step 2:**  
 Then you will need to update the variable to include your aws profile:  
 
-**How to create a profile:**  
+How to create a profile:  
 
 On aws, access the IAM section, and create a new user with the following accesses:  
-- Programmatic access  
-Attach the following Policy Access:  
-- AdministratorAccess  
-*don't forget to save the cvs file, since you will need it for the next step.*  
+•Programmatic access  
+ Attach the following Policy Access:  
+•AdministratorAccess  
+don't forget to save the cvs file, since you will need it for the next step.  
 
-**How to import profile into aws-cli**  
+### How to import profile into aws-cli  
 ```
-aws configure --profile $ProfileName
-# Follow the OnScreen Instructions
+aws configure --profile $ProfileName  
+# Follow the OnScreen Instructions  
 ```
 
-Then you will need to edit the variable file for terraform to include your Profile Name:
+Then you will need to edit the variable file for terraform to include your Profile Name:  
 ```
 vim ~/git/terraform-aws-openshift/variables.tf
 # Edit the line following block to replace the default value:
@@ -57,58 +61,23 @@ cd ~/git/terraform-aws-openshift/
 terraform init
 ```
 
-**Step 3**  
-Ensure you have an ssh key created within your machine, since it does get used and replicated on the hosts.  
-```
-ls -la ~/.ssh/id_rsa
-ls -la ~/.ssh/id_rsa.pub
-```
+**Step 4:**  
 
-If there is no keys, you must create one, using the following command:
-```
-ssh-keygen # follow the on screen
-```
-
-**Step 4**  
-Create your infrastructure using Terraform, using the following command:  
-```
+ Create your infrastructure using Terraform, using the following command:  
+ ```
 terraform plan 
 # if the previous command did not retrun and errors, you should be good to install, run the following command now:  
 terraform apply
 ```
-*This step might take a few minutes since we are creating multiple file:*  
-- Vpc  
-- Instance  
-- Security Group and policies  
-- Route53 DNS Entries  
-- Load Balancers  
-- and much more  
 
-### Openshift Section
-
-**Step 5**  
-Replace the url for the master and public url:  
+**Conclusion**  
+It might take a few minutes for the login page to be available, since the database gets generated afterwords.  
+If you would like to follow the status, you may connect to your vm on Amazon, and execute the following command, as root user:  
 ```
-vim ~/git/terraform-aws-openshift/inventory.cfg
-# Review and replace all variables within the configuration.
+docker logs -f awx_task
 ```
 
-Then, you must upload the file to the bastion server:  
-```
-scp ~/git/terraform-aws-openshift/inventory.cfg ec2-user@$(terraform output bastion-public_dns):~
-chmod 744 ~/git/terraform-aws-openshift/install-from-bastion.sh
-scp ~/git/terraform-aws-openshift/install-from-bastion.sh ec2-user@$(terraform output bastion-public_dns):~
-```
+If you need to stop the services:  
 
-**Generate the keys on the bashion server**
-```
-ssh ec2-user@$(terraform output bastion-public_dns)
-ssh-keygen
-exit
-```
-
-**Execute the installation from the bashion server:**  
-```
-ssh ec2-user@$(terraform output bastion-public_dns)
-~/git/terraform-aws-openshift/install-from-bastion.sh
-```
+**Stop AWX:**  `docker-compose stop`  
+**Upgrade AWX:** `docker-compose pull && docker-compose up --force-recreate`  
