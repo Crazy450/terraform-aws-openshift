@@ -17,12 +17,3 @@ module "openshift" {
 }
 
 //  Output some useful variables for quick SSH access etc.
-output "master-console_url" {
-  value = "https://${aws_lb.ocp-master-ingress-lb.dns_name}:8443"
-}
-output "bastion-public_dns" {
-  value = "${module.openshift.bastion-public_dns}"
-}
-output "bastion-public_ip" {
-  value = "${module.openshift.bastion-public_ip}"
-}

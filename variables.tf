@@ -6,7 +6,7 @@ variable "region" {
 
 variable "profile" {
   description = "Profile configured using aws-cli"
-  default = "$ProfileName"
+  default = "ts_aws_work"
 }
 //  The public key to use for SSH access.
 variable "public_key_path" {

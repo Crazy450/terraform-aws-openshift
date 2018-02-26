@@ -12,7 +12,7 @@ resource "aws_route53_zone" "internal" {
   }
 }
 
-//  DNS for 'masters', 'infras', 'loggings', 'metrics', 'nodes'.
+//  DNS for 'masters', 'infras', 'loggings', 'metrics', 'nodes', 'lb'.
 resource "aws_route53_record" "master1-a-record" {
     zone_id = "${aws_route53_zone.internal.zone_id}"
     name = "master1.openshift.local"
@@ -116,4 +116,13 @@ resource "aws_route53_record" "lb-infra-a-record" {
        zone_id = "${aws_lb.ocp-infra-ingress-lb.zone_id}"
        evaluate_target_health = true
   }
+}
+resource "aws_route53_record" "lb1-a-record" {
+    zone_id = "${aws_route53_zone.internal.zone_id}"
+    name = "lb1.openshift.local"
+    type = "A"
+    ttl  = 300
+    records = [
+        "${aws_instance.lb1.private_ip}"
+    ]
 }

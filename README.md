@@ -16,12 +16,12 @@ Prior to start, you must ensure you already have an aws account.
 
 ### Terraform Section
 
-**Step 1**
+**Step 1**  
 The first step is to clone the repository:  
 ```
 mkdir ~/git ; cd ~/git
-git clone https://github.com/Crazy450/terraform-aws-openshift.git
-cd ~/git/terraform-aws-openshift
+git clone ssh://git@git.bnc.ca:7999/iac/iac_openshift.git 
+cd ~/git/iac_openshift
 ```
 
 **Step 2**  
@@ -43,7 +43,7 @@ aws configure --profile $ProfileName
 
 Then you will need to edit the variable file for terraform to include your Profile Name:
 ```
-vim ~/git/terraform-aws-openshift/variables.tf
+vim ~/git/iac_openshift/variables.tf
 # Edit the line following block to replace the default value:
 variable "profile" {
   description = "Profile configured using aws-cli"
@@ -53,7 +53,7 @@ variable "profile" {
 
 You must initiate terraform, use the following command:  
 ```
-cd ~/git/terraform-aws-openshift/
+cd ~/git/iac_openshift/
 terraform init
 ```
 
@@ -89,15 +89,15 @@ terraform apply
 **Step 5**  
 Replace the url for the master and public url:  
 ```
-vim ~/git/terraform-aws-openshift/inventory.cfg
+vim ~/git/iac_openshift/inventory.cfg
 # Review and replace all variables within the configuration.
 ```
 
 Then, you must upload the file to the bastion server:  
 ```
-scp ~/git/terraform-aws-openshift/inventory.cfg ec2-user@$(terraform output bastion-public_dns):~
-chmod 744 ~/git/terraform-aws-openshift/install-from-bastion.sh
-scp ~/git/terraform-aws-openshift/install-from-bastion.sh ec2-user@$(terraform output bastion-public_dns):~
+scp ~/git/iac_openshift/inventory.cfg ec2-user@$(terraform output bastion-public_dns):~
+chmod 744 ~/git/iac_openshift/install-from-bastion.sh
+scp ~/git/iac_openshift/install-from-bastion.sh ec2-user@$(terraform output bastion-public_dns):~
 ```
 
 **Generate the keys on the bashion server**
@@ -110,5 +110,5 @@ exit
 **Execute the installation from the bashion server:**  
 ```
 ssh ec2-user@$(terraform output bastion-public_dns)
-~/git/terraform-aws-openshift/install-from-bastion.sh
+~/git/iac_openshift/install-from-bastion.sh
 ```
